@@ -1,0 +1,2 @@
+# Prompt files must stay byte-identical to the original (LF line endings, no trailing-space trimming).
+data/** text eol=lf
