@@ -1,0 +1,16 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+    // The terminal profile below activates .venv, so the Python extension doesn't need to.
+    "python.terminal.activateEnvironment": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests"],
+
+    // Every new terminal in this workspace opens PowerShell with .venv already activated.
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (.venv)": {
+            "source": "PowerShell",
+            "args": ["-NoExit", "-Command", "& .\\.venv\\Scripts\\Activate.ps1"]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell (.venv)"
+}

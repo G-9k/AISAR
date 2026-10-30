@@ -28,7 +28,12 @@ def hello_currency() -> Task:
     #   - dataset: una lista con un solo Sample (input=USER_MESSAGE, target=EXPECTED_FINAL_AMOUNT)
     #   - solver: generate()
     #   - scorer: includes()
-    raise NotImplementedError("Ejercicio 00a: falta completar hello_currency()")
+    elsample = Sample(input=USER_MESSAGE,
+                      target=EXPECTED_FINAL_AMOUNT)
+    elsolver = generate()
+    elscorer = includes()
+
+    return Task(dataset=[elsample], solver=elsolver, scorer=elscorer)
 
 
 # Exercise 00b
