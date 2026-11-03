@@ -43,16 +43,23 @@ def run_with_mock(answer: str, log_dir: str) -> EvalLog:
     #      Una respuesta guionada se arma con ModelOutput.from_content(model="mockllm/model", content=answer).
     #   2. Corré eval(hello_currency(), model=..., log_dir=log_dir, display="none").
     #   3. eval() devuelve una LISTA de logs (uno por task): devolvé el primero.
-    raise NotImplementedError("Ejercicio 00b: falta completar run_with_mock()")
+
+    respuestaArmada = ModelOutput.from_content(model="mockllm/model", content=answer)
+
+    modeloFalso = get_model(model="mockllm/model", custom_outputs=[respuestaArmada])
+
+    logs = eval(hello_currency(),model=modeloFalso, log_dir=log_dir, display="none")
+
+    return logs[0]
 
 
 # Exercise 00c
 def final_answer(log: EvalLog) -> str:
     # TODO: devolvé el texto de la respuesta final del (único) sample del log.
-    raise NotImplementedError("Ejercicio 00c: falta completar final_answer()")
+    return log.samples[0].output.completion
 
 
 # Exercise 00d
 def accuracy_of(log: EvalLog) -> float:
     # TODO: devolvé el valor de la métrica "accuracy" del primer scorer del log.
-    raise NotImplementedError("Ejercicio 00d: falta completar accuracy_of()")
+    return log.results.scores[0].metrics["accuracy"].value
