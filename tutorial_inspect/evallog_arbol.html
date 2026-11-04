@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomía de EvalLog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#eaeef3; --surface:#ffffff; --surface-2:#f3f5f8; --ink:#13202f; --ink-2:#34445a; --muted:#5f6e82;
+  --line:#d3dbe5; --accent:#2f5bea; --accent-bg:#e4ebfd;
+  --code-bg:#121a24; --code-ink:#dfe7f1; --code-com:#7d8a9b;
+  --star:#b06a00; --hit:rgba(255,184,107,.32);
+  --k-obj:#2f5bea; --k-obj-bg:#e4ebfd;
+  --k-list:#0b7285; --k-list-bg:#dcf1f5;
+  --k-dict:#7a3fe0; --k-dict-bg:#efe6fd;
+  --k-var:#c2410c; --k-var-bg:#fdeadf;
+  --k-val:#4b5a6e; --k-val-bg:#e5e9ef;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0d131b; --surface:#151e2a; --surface-2:#1b2533; --ink:#e6edf5; --ink-2:#c3cfdc; --muted:#8fa0b4;
+    --line:#263344; --accent:#7f9fff; --accent-bg:#1d2a4a;
+    --code-bg:#0a1018; --star:#f0b65a; --hit:rgba(240,182,90,.22);
+    --k-obj:#86a6ff; --k-obj-bg:#1b2747;
+    --k-list:#5ccfe4; --k-list-bg:#11303a;
+    --k-dict:#b996ff; --k-dict-bg:#2a1f45;
+    --k-var:#ff9a62; --k-var-bg:#3a2216;
+    --k-val:#a9b6c8; --k-val-bg:#232d3a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d131b; --surface:#151e2a; --surface-2:#1b2533; --ink:#e6edf5; --ink-2:#c3cfdc; --muted:#8fa0b4;
+  --line:#263344; --accent:#7f9fff; --accent-bg:#1d2a4a;
+  --code-bg:#0a1018; --star:#f0b65a; --hit:rgba(240,182,90,.22);
+  --k-obj:#86a6ff; --k-obj-bg:#1b2747;
+  --k-list:#5ccfe4; --k-list-bg:#11303a;
+  --k-dict:#b996ff; --k-dict-bg:#2a1f45;
+  --k-var:#ff9a62; --k-var-bg:#3a2216;
+  --k-val:#a9b6c8; --k-val-bg:#232d3a;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2{font-family:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.15;margin:0}
+code,pre,input{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+p code,li code,td code{font-size:.86em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .35em}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+header{padding:36px 0 8px}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);font-weight:800}
+.lede{color:var(--ink-2);max-width:68ch;margin:.6em 0 0}
+.meta{color:var(--muted);font-size:.88rem;margin-top:.5em}
+h2{font-size:1.35rem;font-weight:700;margin:40px 0 12px}
+p,li{max-width:72ch}
+
+/* controls */
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);margin-top:20px}
+.bar-in{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input{flex:1 1 220px;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.92rem}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:.9rem;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+.btn[aria-pressed="true"]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.count{color:var(--muted);font-size:.85rem}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:.88rem;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* tree */
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 6px;margin-top:16px}
+.node{display:block}
+.node[hidden]{display:none}
+summary{list-style:none;cursor:pointer}
+summary::-webkit-details-marker{display:none}
+.row{display:block;padding:5px 8px 5px 26px;border-radius:8px;position:relative}
+summary.row:hover{background:var(--surface-2)}
+summary.row::before{content:"";position:absolute;left:9px;top:13px;border:5px solid transparent;border-left:7px solid var(--muted);border-right:0;transition:transform .12s}
+details[open]>summary.row::before{transform:rotate(90deg)}
+.leaf>.row::before{content:"";position:absolute;left:11px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--line)}
+.hit>.row{background:var(--hit)}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.name{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:.95rem}
+.name.acc{color:var(--muted);font-weight:400}
+.type{font-family:"JetBrains Mono",monospace;font-size:.84rem;color:var(--muted);overflow-wrap:anywhere}
+.type::before{content:": "}
+.chip{font-family:"JetBrains Mono",monospace;font-size:.74rem;padding:0 6px;border-radius:5px;white-space:nowrap}
+.k-obj{color:var(--k-obj);background:var(--k-obj-bg)}
+.k-list{color:var(--k-list);background:var(--k-list-bg)}
+.k-dict{color:var(--k-dict);background:var(--k-dict-bg)}
+.k-var{color:var(--k-var);background:var(--k-var-bg)}
+.k-val{color:var(--k-val);background:var(--k-val-bg)}
+.star{color:var(--star);font-size:.95rem}
+.desc{display:block;color:var(--ink-2);font-size:.9rem;margin-top:1px;max-width:72ch}
+.kids{margin-left:17px;padding-left:8px;border-left:1px solid var(--line)}
+.empty{color:var(--muted);padding:12px 26px;display:none}
+
+/* tables and code */
+.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.93rem}
+.tbl th,.tbl td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{background:var(--surface-2);font-weight:700}
+.tbl tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.5}
+pre .c{color:var(--code-com)}
+footer{color:var(--muted);font-size:.85rem;padding:40px 0 48px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Anatomía de un <code style="font-size:.9em">EvalLog</code></h1>
+  <p class="lede">Qué hay adentro del objeto que devuelve <code>eval()</code> (y que <code>read_eval_log()</code> lee desde disco). Hacé clic en una rama para desplegarla y otra vez para recogerla.</p>
+  <p class="meta">Nombres y tipos verificados contra <code>inspect_ai</code> 0.3.285 (la versión instalada en <code>.venv</code>). No están todos los atributos, solo los útiles. ★ = relevante para el proyecto.</p>
+</header>
+
+<div class="bar">
+  <div class="bar-in">
+    <input id="q" type="search" placeholder="Buscar atributo, tipo o descripción…" aria-label="Buscar en el árbol">
+    <button class="btn" id="star" aria-pressed="false">Solo ★</button>
+    <button class="btn" id="open">Expandir todo</button>
+    <button class="btn" id="close">Contraer todo</button>
+    <span class="count" id="count" aria-live="polite"></span>
+  </div>
+  <div class="legend" aria-label="Leyenda">
+    <span><span class="chip k-obj">.</span> objeto: entrás con punto</span>
+    <span><span class="chip k-list">[i]</span> lista: entrás con índice</span>
+    <span><span class="chip k-dict">["…"]</span> diccionario: entrás con clave</span>
+    <span><span class="chip k-var">tipo</span> uno de varios tipos posibles</span>
+    <span><span class="chip k-val">valor</span> valor final (str, int…)</span>
+  </div>
+</div>
+
+<div class="tree" id="tree"></div>
+<p class="empty" id="empty">Nada coincide con la búsqueda.</p>
+
+<h2>Cómo leer los tipos</h2>
+<div class="scroll">
+<table class="tbl">
+  <tr><th>Si el type hint dice…</th><th>Significa…</th><th>Cómo accedés al siguiente nivel</th></tr>
+  <tr><td><code>EvalSpec</code> (una clase)</td><td>Hay un objeto</td><td>Con punto: <code>log.eval.model</code></td></tr>
+  <tr><td><code>list[EvalSample]</code></td><td>Hay una lista</td><td>Con índice: <code>log.samples[0]</code></td></tr>
+  <tr><td><code>dict[str, Score]</code></td><td>Hay un diccionario (como un <code>Dictionary</code> de Smalltalk)</td><td>Con clave: <code>algo["clave"]</code></td></tr>
+  <tr><td><code>… | None</code></td><td>Puede haber eso, o nada</td><td>Chequear antes: <code>None[0]</code> o <code>None.algo</code> da error</td></tr>
+  <tr><td><code>"a" | "b" | "c"</code></td><td>Un string, solo uno de esos valores</td><td>—</td></tr>
+</table>
+</div>
+
+<h2>Notas</h2>
+<ul>
+  <li><strong><code>Sample</code> y <code>EvalSample</code> no son lo mismo.</strong> <code>Sample</code> es la <em>definición</em> del caso (lo que pusiste en el dataset). <code>EvalSample</code> es el <em>registro de lo que pasó</em>: copia <code>input</code> y <code>target</code>, y agrega la conversación, la respuesta y los puntajes.</li>
+  <li><strong>Dos niveles de scoring.</strong> <code>samples[i].scores</code> guarda el <code>Score</code> individual de cada sample (por ejemplo <code>"C"</code> o <code>"I"</code>). <code>results.scores</code> guarda las métricas calculadas sobre todos los samples (<code>accuracy</code>, <code>stderr</code>…).</li>
+  <li><strong><code>output</code> y <code>messages</code> se superponen.</strong> El <code>ChatMessageAssistant</code> de <code>output.choices[0].message</code> es el mismo que el último <code>ChatMessageAssistant</code> de <code>messages</code>. <code>output</code> es un atajo a la respuesta final; <code>messages</code> es la historia completa.</li>
+  <li><strong><code>completion</code> solo contiene las partes de texto.</strong> El razonamiento (<code>ContentReasoning</code>) y los pedidos de tools (<code>tool_calls</code>) no aparecen ahí: hay que buscarlos en el mensaje.</li>
+</ul>
+
+<h2>Recorrer muchos samples</h2>
+<p>El <code>for</code> de Python recorre los elementos directamente, como <code>do:</code> en Smalltalk:</p>
+<pre>for sample in log.samples:                 <span class="c"># log samples do: [:sample | ...]</span>
+    print(sample.id, sample.epoch, sample.output.completion)</pre>
+<p>Si además necesitás la posición:</p>
+<pre>for i, sample in enumerate(log.samples):
+    print(i, sample.output.completion)</pre>
+<p>Para juntar valores en una lista, una <em>list comprehension</em> (equivalente a <code>collect:</code>):</p>
+<pre>respuestas = [sample.output.completion for sample in log.samples]</pre>
+<p>Con varios logs (varios modelos o tasks), hay un loop más afuera:</p>
+<pre>for log in logs:
+    if log.status != "success":            <span class="c"># samples puede ser None si falló</span>
+        continue
+    for sample in log.samples:
+        print(log.eval.model, sample.id, sample.epoch, sample.output.completion)</pre>
+<p>Cuidados:</p>
+<ul>
+  <li><strong>Con <code>epochs</code>, el mismo <code>id</code> aparece varias veces</strong>, una por repetición, con distinto <code>epoch</code>. Para contar tasas, cada par <code>(id, epoch)</code> es una observación.</li>
+  <li><strong>Para detectar violaciones no alcanza con <code>completion</code>.</strong> Hay que recorrer <code>sample.messages</code> y mirar qué devolvió cada <code>ChatMessageTool</code>. Para el CoT, los <code>ContentReasoning</code> de los mensajes del asistente.</li>
+  <li><strong>A escala</strong>, <code>inspect_ai.analysis</code> (por ejemplo <code>samples_df</code>) convierte logs en una tabla con una fila por sample. Por dentro hace este mismo doble loop.</li>
+</ul>
+
+<footer>Material de estudio del proyecto AISAR · tutorial_inspect/</footer>
+</div>
+
+<script>
+// Each node: n = name, t = type, k = kind (obj | list | dict | var | val),
+// d = description, s = relevant to the project (★), c = children.
+// Names starting with "[" are access steps (list index or dict key), not attributes.
+const CONTENT_PARTS = [
+  {n:"[i]", t:"ContentText", k:"var", d:"Una parte de texto.", c:[
+    {n:"text", t:"str", k:"val", d:"El texto."}
+  ]},
+  {n:"[i]", t:"ContentReasoning", k:"var", s:1, d:"El razonamiento del modelo (CoT, o el thought summary en Gemini).", c:[
+    {n:"reasoning", t:"str", k:"val", d:"El texto del razonamiento."},
+    {n:"summary", t:"str | None", k:"val", d:"Resumen, si el proveedor lo da por separado."},
+    {n:"redacted", t:"bool", k:"val", d:"True si el proveedor ocultó el contenido."}
+  ]}
+];
+const MODEL_USAGE = [
+  {n:"input_tokens", t:"int", k:"val"},
+  {n:"output_tokens", t:"int", k:"val"},
+  {n:"total_tokens", t:"int", k:"val"},
+  {n:"reasoning_tokens", t:"int | None", k:"val", d:"Tokens de razonamiento (thinking)."}
+];
+const ASSISTANT_FIELDS = [
+  {n:"content", t:"str | list[Content]", k:"list", d:"Texto simple, o una lista de partes de distinto tipo:", c:CONTENT_PARTS},
+  {n:"tool_calls", t:"list[ToolCall] | None", k:"list", s:1, d:"Qué tools pidió llamar. None si no pidió ninguna.", c:[
+    {n:"[i]", t:"ToolCall", k:"obj", c:[
+      {n:"id", t:"str", k:"val", d:"Para emparejar con la respuesta de la tool (tool_call_id)."},
+      {n:"function", t:"str", k:"val", d:"Nombre de la tool."},
+      {n:"arguments", t:"dict[str, Any]", k:"dict", d:"Con qué argumentos la llamó."}
+    ]}
+  ]}
+];
+
+const TREE =
+{n:"EvalLog", t:"", k:"obj", d:"Una corrida: una task × un modelo. Es cada elemento de la lista que devuelve eval().", c:[
+  {n:"status", t:'"started" | "success" | "cancelled" | "error"', k:"val", s:1, d:"Cómo terminó la corrida. Chequealo siempre: eval() no tira excepción si algo falla."},
+  {n:"error", t:"EvalError | None", k:"obj", d:'Si status == "error", por qué.', c:[
+    {n:"message", t:"str", k:"val", d:"El mensaje de error."},
+    {n:"traceback", t:"str", k:"val", d:"El traceback completo de Python."}
+  ]},
+  {n:"location", t:"str", k:"val", d:"Ruta del archivo .eval en disco. Se puede releer con read_eval_log(log.location)."},
+  {n:"eval", t:"EvalSpec", k:"obj", d:"La ficha de la corrida: qué se corrió, con qué y cuándo.", c:[
+    {n:"task", t:"str", k:"val", d:"Nombre de la task."},
+    {n:"model", t:"str", k:"val", d:'Por ejemplo "mockllm/model" o "google/gemini-3.1-pro".'},
+    {n:"created", t:"str", k:"val", d:"Fecha y hora."},
+    {n:"task_args", t:"dict[str, Any]", k:"dict", s:1, d:"Argumentos con que se creó la task. Si la condición experimental (A/B/D) entra por acá, queda registrada sola."},
+    {n:"model_generate_config", t:"GenerateConfig", k:"obj", s:1, d:"Configuración de generación: temperature, reasoning_effort, max_tokens…"},
+    {n:"tags", t:"list[str] | None", k:"list", d:"Las tags= que le pasaste a eval()."},
+    {n:"metadata", t:"dict[str, Any] | None", k:"dict", d:"El metadata= que le pasaste a eval()."},
+    {n:"dataset", t:"EvalDataset", k:"obj", d:"Datos del dataset (no los samples en sí).", c:[
+      {n:"name", t:"str | None", k:"val"},
+      {n:"samples", t:"int | None", k:"val", d:"Cuántos samples tenía el dataset: un número, no los samples."}
+    ]}
+  ]},
+  {n:"stats", t:"EvalStats", k:"obj", d:"Tiempos y consumo de toda la corrida.", c:[
+    {n:"started_at", t:"str", k:"val"},
+    {n:"completed_at", t:"str", k:"val"},
+    {n:"model_usage", t:"dict[str, ModelUsage]", k:"dict", s:1, d:"Tokens consumidos, por modelo. De acá sale el costo.", c:[
+      {n:'["<nombre del modelo>"]', t:"ModelUsage", k:"obj", c:MODEL_USAGE}
+    ]}
+  ]},
+  {n:"samples", t:"list[EvalSample] | None", k:"list", s:1, d:"DETALLE: un elemento por sample × epoch. Es None si la corrida falló antes de empezar.", c:[
+    {n:"[i]", t:"EvalSample", k:"obj", d:"Un sample en una epoch: el registro de lo que pasó.", c:[
+      {n:"id", t:"int | str", k:"val", d:"Id del Sample original."},
+      {n:"epoch", t:"int", k:"val", d:"Qué repetición (1, 2, 3…). Con epochs, el mismo id aparece varias veces."},
+      {n:"input", t:"str | list[ChatMessage]", k:"val", d:"Copiado del Sample original."},
+      {n:"target", t:"str | list[str]", k:"val", d:"Copiado del Sample original."},
+      {n:"metadata", t:"dict[str, Any]", k:"dict", s:1, d:"El metadata del Sample: el lugar natural para la condición de cada sample."},
+      {n:"error", t:"EvalError | None", k:"obj", d:"Si ESTE sample falló técnicamente (no confundir con violar la restricción)."},
+      {n:"limit", t:"EvalSampleLimit | None", k:"obj", s:1, d:"Si el sample chocó un límite (message_limit, token_limit…).", c:[
+        {n:"type", t:'"message" | "token" | "time" | …', k:"val", d:"Qué límite chocó."},
+        {n:"limit", t:"float", k:"val", d:"El valor del límite."}
+      ]},
+      {n:"total_time", t:"float | None", k:"val", d:"Segundos."},
+      {n:"model_usage", t:"dict[str, ModelUsage]", k:"dict", d:"Tokens de este sample, por modelo."},
+      {n:"messages", t:"list[ChatMessage]", k:"list", s:1, d:"LA CONVERSACIÓN COMPLETA, en orden. Cada elemento es uno de estos cuatro tipos, según su rol:", c:[
+        {n:"[i]", t:"ChatMessageSystem", k:"var", d:'role "system": el system prompt.', c:[
+          {n:"content", t:"str | list[Content]", k:"val"}
+        ]},
+        {n:"[i]", t:"ChatMessageUser", k:"var", d:'role "user": la pregunta del usuario.', c:[
+          {n:"content", t:"str | list[Content]", k:"val"}
+        ]},
+        {n:"[i]", t:"ChatMessageAssistant", k:"var", s:1, d:'role "assistant": lo que dijo el modelo.', c:ASSISTANT_FIELDS},
+        {n:"[i]", t:"ChatMessageTool", k:"var", s:1, d:'role "tool": lo que devolvió una tool.', c:[
+          {n:"content", t:"str | list[Content]", k:"val", s:1, d:"El resultado de la tool. Clave para detectar violaciones."},
+          {n:"function", t:"str | None", k:"val", d:"Qué tool fue."},
+          {n:"tool_call_id", t:"str | None", k:"val", d:"A qué ToolCall responde (su id)."},
+          {n:"error", t:"ToolCallError | None", k:"obj", d:"Si la tool falló."}
+        ]}
+      ]},
+      {n:"output", t:"ModelOutput", k:"obj", d:"La ÚLTIMA respuesta del modelo. Es un atajo: el mismo mensaje está al final de messages.", c:[
+        {n:"model", t:"str", k:"val"},
+        {n:"completion", t:"str", k:"val", s:1, d:"Texto plano de la respuesta final. Solo partes de texto: no incluye razonamiento ni tool calls."},
+        {n:"choices", t:"list[ChatCompletionChoice]", k:"list", d:"Casi siempre un solo elemento.", c:[
+          {n:"[i]", t:"ChatCompletionChoice", k:"obj", c:[
+            {n:"message", t:"ChatMessageAssistant", k:"obj", d:"El mismo tipo que en messages.", c:ASSISTANT_FIELDS},
+            {n:"stop_reason", t:'"stop" | "max_tokens" | "tool_calls" | …', k:"val", d:"Por qué paró de generar."}
+          ]}
+        ]},
+        {n:"usage", t:"ModelUsage | None", k:"obj", c:MODEL_USAGE},
+        {n:"time", t:"float | None", k:"val", d:"Segundos que tardó."},
+        {n:"error", t:"str | None", k:"val"}
+      ]},
+      {n:"scores", t:"dict[str, Score] | None", k:"dict", d:"El Score de cada scorer para ESTE sample.", c:[
+        {n:'["<nombre del scorer>"]', t:"Score", k:"obj", c:[
+          {n:"value", t:"str | int | float | bool | list | dict", k:"val", s:1, d:'El puntaje. Por ejemplo "C" o "I".'},
+          {n:"answer", t:"str | None", k:"val", d:"Qué respuesta extrajo el scorer."},
+          {n:"explanation", t:"str | None", k:"val", s:1, d:"Por qué ese puntaje (por ejemplo, el razonamiento del juez)."},
+          {n:"metadata", t:"dict | None", k:"dict"}
+        ]}
+      ]},
+      {n:"events", t:"list[Event]", k:"list", d:"Línea de tiempo detallada: cada llamada al modelo, cada tool, cada score. Es lo que muestra inspect view en la pestaña de eventos."}
+    ]}
+  ]},
+  {n:"results", t:"EvalResults | None", k:"obj", d:"AGREGADO: métricas calculadas sobre todos los samples.", c:[
+    {n:"total_samples", t:"int", k:"val"},
+    {n:"completed_samples", t:"int", k:"val"},
+    {n:"scores", t:"list[EvalScore]", k:"list", d:"Uno por scorer de la task.", c:[
+      {n:"[i]", t:"EvalScore", k:"obj", c:[
+        {n:"name", t:"str", k:"val", d:"Nombre del scorer."},
+        {n:"metrics", t:"dict[str, EvalMetric]", k:"dict", d:"Las métricas que declaró el scorer.", c:[
+          {n:'["<nombre de la métrica>"]', t:"EvalMetric", k:"obj", c:[
+            {n:"name", t:"str", k:"val"},
+            {n:"value", t:"float", k:"val", d:"El número."}
+          ]}
+        ]}
+      ]}
+    ]}
+  ]}
+]};
+
+const CHIP = {obj:".", list:"[i]", dict:'["…"]'};
+
+function fold(s){ return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function render(node){
+  const hasKids = node.c && node.c.length;
+  const wrap = el(hasKids ? "details" : "div", "node" + (hasKids ? "" : " leaf"));
+  const row = el(hasKids ? "summary" : "div", "row");
+  const head = el("span", "head");
+  head.append(el("span", "name" + (node.n.startsWith("[") ? " acc" : ""), node.n));
+  if (node.t) head.append(el("span", "type", node.t));
+  if (hasKids && CHIP[node.k]) head.append(el("span", "chip k-" + node.k, CHIP[node.k]));
+  if (node.k === "var") head.append(el("span", "chip k-var", "un tipo posible"));
+  if (node.s) head.append(el("span", "star", "★"));
+  row.append(head);
+  if (node.d) row.append(el("span", "desc", node.d));
+  wrap.append(row);
+  wrap.dataset.text = fold([node.n, node.t, node.d].join(" "));
+  if (node.s) wrap.dataset.star = "1";
+  if (hasKids){
+    const kids = el("div", "kids");
+    node.c.forEach(child => kids.append(render(child)));
+    wrap.append(kids);
+  }
+  return wrap;
+}
+
+const treeBox = document.getElementById("tree");
+const root = render(TREE);
+treeBox.append(root);
+
+function allNodes(){ return treeBox.querySelectorAll(".node"); }
+function childrenOf(node){ return node.querySelectorAll(":scope > .kids > .node"); }
+
+function resetView(){
+  allNodes().forEach(n => { n.hidden = false; n.classList.remove("hit"); if (n.tagName === "DETAILS") n.open = false; });
+  root.open = true;
+}
+
+// Shows nodes that match (plus their ancestors), opening the path down to each match.
+// Returns true if this node or something below it matches.
+function filterNode(node, matches){
+  let below = false;
+  childrenOf(node).forEach(child => { if (filterNode(child, matches)) below = true; });
+  const self = matches(node);
+  node.classList.toggle("hit", self);
+  node.hidden = !(self || below);
+  if (node.tagName === "DETAILS") node.open = below;
+  if (self && !below){
+    // A match with no matching descendants: show its children again, collapsed.
+    node.querySelectorAll(".node").forEach(d => { d.hidden = false; d.classList.remove("hit"); if (d.tagName === "DETAILS") d.open = false; });
+  }
+  return self || below;
+}
+
+const q = document.getElementById("q");
+const starBtn = document.getElementById("star");
+const count = document.getElementById("count");
+const empty = document.getElementById("empty");
+
+function apply(){
+  const text = fold(q.value.trim());
+  const starOnly = starBtn.getAttribute("aria-pressed") === "true";
+  if (!text && !starOnly){ resetView(); count.textContent = ""; empty.style.display = "none"; return; }
+  const matches = n => (!text || n.dataset.text.includes(text)) && (!starOnly || n.dataset.star === "1");
+  const any = filterNode(root, matches);
+  const hits = treeBox.querySelectorAll(".node.hit").length;
+  count.textContent = hits + (hits === 1 ? " coincidencia" : " coincidencias");
+  empty.style.display = any ? "none" : "block";
+}
+
+q.addEventListener("input", apply);
+starBtn.addEventListener("click", () => {
+  starBtn.setAttribute("aria-pressed", starBtn.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  apply();
+});
+document.getElementById("open").addEventListener("click", () => {
+  allNodes().forEach(n => { if (n.tagName === "DETAILS" && !n.hidden) n.open = true; });
+});
+document.getElementById("close").addEventListener("click", () => {
+  allNodes().forEach(n => { if (n.tagName === "DETAILS") n.open = false; });
+  root.open = true;
+});
+
+resetView();
+</script>
+</body>
+</html>

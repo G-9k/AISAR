@@ -40,9 +40,19 @@ def get_fee_for_payment_method() -> Tool:
         """
         # TODO: buscá `method` en FEE_DATABASE sin distinguir mayúsculas y devolvé,
         # serializado con json.dumps(), el mismo dict que devuelve agents.py:
-        #   éxito: {"status": "success", "fee_percentage": <float>}
-        #   error: {"status": "error", "error_message": "Payment method '<method>' not found"}
-        raise NotImplementedError("Ejercicio 01a: falta completar get_fee_for_payment_method()")
+        #   éxito: {"status": "success", "fee_percentage": {float}}
+        #   error: {"status": "error", "error_message": "Payment method '{method}' not found"}
+        lmethod = method.lower()
+
+        fee = FEE_DATABASE.get(lmethod,"error")
+
+        if fee == "error":
+            result = {"status": "error", "error_message": f"Payment method '{method}' not found"}
+        else:
+            result = {"status": "success", "fee_percentage": fee}
+        
+        return json.dumps(result)
+            
 
     return execute
 
@@ -58,6 +68,26 @@ def get_exchange_rate() -> Tool:
         #   éxito: {"status": "success", "rate": <float>}
         #   error: {"status": "error", "error_message": "Unsupported currency pair: <BASE>/<TARGET>"}
         #          (BASE y TARGET tal como llegaron, sin pasar a minúsculas)
-        raise NotImplementedError("Ejercicio 01b: falta completar get_exchange_rate()")
+        """Return the exchange rate between two currencies (ISO 4217 codes).
+
+        Returns {"status": "success", "rate": <float>}
+             or {"status": "error", "error_message": <str>}.
+
+        Args:
+            base_currency: The currency you want to exchange from.
+            target_currency: The currency you want to exchange to.
+        """
+
+        lbasec_currency = base_currency.lower()
+        ltarget_currency = target_currency.lower()
+
+        ex_rate = RATE_DATABASE.get(lbasec_currency,{}).get(ltarget_currency,"error")
+
+        if ex_rate == "error":
+            result = {"status": "error", "error_message": f"Unsupported currency pair: {base_currency}/{target_currency}"}
+        else:
+            result = {"status": "success", "rate": ex_rate}
+        
+        return json.dumps(result)
 
     return execute
