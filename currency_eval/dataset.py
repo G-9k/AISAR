@@ -45,7 +45,13 @@ def load_user_message() -> str:
 def load_main_prompt(variant: str) -> str:
     # TODO: leé data/prompts/main/<variant>.txt con read_text() y devolvé su contenido.
     #       Si el archivo no existe, lanzá ValueError con un mensaje que nombre la variante.
-    raise NotImplementedError("Ejercicio 02a: falta completar load_main_prompt()")
+    
+    addr = PROMPTS_DIR / "main" / f"{variant}.txt"
+
+    if addr.exists():
+        return read_text(addr)
+    else:
+        raise ValueError(f"Prompt {variant} does not exist.")
 
 
 # Exercise 02b
@@ -56,7 +62,19 @@ def make_sample(prompt_variant: str, calculator_variant: str) -> Sample:
     #   target:   EXPECTED_FINAL_AMOUNT como string
     #   metadata: prompt_variant, calculator_variant, system_prompt (el texto del prompt)
     #             y todas las claves de SCENARIO
-    raise NotImplementedError("Ejercicio 02b: falta completar make_sample()")
+    #Metadata debe ser un diccionario.
+
+    metaDicc = {"prompt_variant": prompt_variant, 
+                "calculator_variant": calculator_variant,
+                "system_prompt": load_main_prompt(prompt_variant),
+                **SCENARIO}
+
+    sampleOfEval = Sample(id=f"{calculator_variant}__{prompt_variant}",
+                          input=load_user_message(),
+                          target=str(EXPECTED_FINAL_AMOUNT),
+                          metadata= metaDicc)
+
+    return sampleOfEval
 
 
 # Exercise 02c
@@ -67,4 +85,9 @@ def build_dataset(
     # TODO: si un argumento es None, usá la lista completa (PROMPT_VARIANTS / CALCULATOR_VARIANTS).
     #       Armá un Sample por cada combinación (calculador x prompt, en ese orden; mirá
     #       itertools.product) y devolvé MemoryDataset(samples, name="currency_conversion").
-    raise NotImplementedError("Ejercicio 02c: falta completar build_dataset()")
+    if prompt_variants is None: prompt_variants = PROMPT_VARIANTS
+    if calculator_variants is None: calculator_variants = CALCULATOR_VARIANTS
+
+    dataset = [make_sample(promptVar, calcVar) for promptVar, calcVar in product(prompt_variants,calculator_variants)]
+
+    return MemoryDataset(dataset, "currency_conversion")

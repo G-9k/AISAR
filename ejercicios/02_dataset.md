@@ -37,8 +37,10 @@ Además, el solver del ejercicio 03 lo lee directo de ahí.
 
 ## Python que aparece acá
 
-- **`pathlib.Path`:** `PROMPTS_DIR / "main" / "original.txt"` arma una ruta (el `/` está sobrecargado,
-  como un mensaje binario en Smalltalk). `path.exists()` dice si el archivo existe.
+- **`pathlib.Path`:** `PROMPTS_DIR` ya es un `Path`, y `PROMPTS_DIR / "main" / "original.txt"` arma otro
+  (el `/` está sobrecargado, como un mensaje binario en Smalltalk). Cualquier `Path` entiende `.exists()`,
+  que dice si el archivo existe. No hace falta importar `Path` para usarlo: el `import` solo se necesita
+  para escribir el nombre `Path` en tu código (por ejemplo, `Path("algo.txt")`).
 - **Desempaquetar un dict (`**`):** `{"a": 1, **SCENARIO}` crea un dict nuevo con `a` más todas las claves de `SCENARIO`.
 - **`itertools.product(xs, ys)`:** todas las combinaciones `(x, y)`, en orden: primero fija `x` y recorre `ys`.
 - **List comprehension:** `[f(x, y) for x, y in product(xs, ys)]` es como `collect:` sobre las combinaciones.
