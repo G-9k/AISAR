@@ -29,7 +29,21 @@ def currency_system_prompt(no_thinking_suffix: bool | None = None) -> Solver:
         #      NO es Gemini (usá is_gemini(str(state.model))); si es True/False, obedecé eso.
         #   3. Insertá un ChatMessageSystem con el texto al PRINCIPIO de state.messages.
         #   4. Devolvé state.
-        raise NotImplementedError("Ejercicio 03a: falta completar currency_system_prompt()")
+
+        system_prompt = ChatMessageSystem(content = state.metadata["system_prompt"])
+
+        if no_thinking_suffix is None:
+            if is_gemini(str(state.model)): decision_suffix = False
+            else: decision_suffix = True
+        else: decision_suffix = no_thinking_suffix
+
+        if decision_suffix:
+            system_prompt.content = system_prompt.content + suffix
+            state.messages.insert(0, system_prompt)
+            return state
+        else:
+            state.messages.insert(0, system_prompt)
+            return state
 
     return solve
 
@@ -41,4 +55,8 @@ def currency_agent_v0() -> Solver:
     #   1. currency_system_prompt()
     #   2. use_tools(...) con las dos tools del ejercicio 01
     #   3. generate(tool_calls="loop")
-    raise NotImplementedError("Ejercicio 03b: falta completar currency_agent_v0()")
+    currency_agent = chain([currency_system_prompt(),
+                            use_tools(get_fee_for_payment_method(), get_exchange_rate()),
+                            generate(tool_calls="loop")])
+
+    return currency_agent

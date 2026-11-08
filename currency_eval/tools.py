@@ -1,7 +1,6 @@
 """Domain tools of the currency agent (exercise 01).
 
-Ported from original_currency_experiment/agents.py:46-93. The databases and the
-returned dicts are identical to the original. Two differences are forced by Inspect:
+Ported from original_currency_experiment/agents.py:46-93. The databases and the returned dicts are identical to the original. Two differences are forced by Inspect:
   - Tools return a string, so the dict is serialized with json.dumps().
   - Inspect requires a description for every parameter (ADK sends none).
 """
