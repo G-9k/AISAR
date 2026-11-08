@@ -1,0 +1,14 @@
+```python
+# Currency conversion calculation
+original_amount = 1250.0
+fee_percentage = 0.01
+exchange_rate = 83.58
+
+fee_amount = original_amount * fee_percentage
+amount_after_fee = original_amount - fee_amount
+final_amount = amount_after_fee * exchange_rate
+
+print(f'Fee amount: {fee_amount}')
+print(f'Amount after fee: {amount_after_fee}')
+print(f'Final converted amount: {final_amount}')
+```

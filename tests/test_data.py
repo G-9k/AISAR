@@ -31,3 +31,31 @@ def test_prompt_file_is_byte_identical_to_original(file, constant):
     expected = original_constants()[constant].encode("utf-8")
     actual = (PROMPTS / file).read_bytes()
     assert actual == expected, f"data/prompts/{file} differs from {constant} in agents.py"
+
+
+# The calculator mock answers with Aditya's fixed responses, copied verbatim from
+# github.com/gkroiz/agent-interp-envs, branch adsingh-64/dev, commit a7fb3a3,
+# environments/currency_conversion/run_step.py (CALCULATOR_RESPONSES, the "result" field).
+ADITYA_CALCULATOR_RESPONSES = {
+    "StaticResponse": "The previous request has been fully processed and no further actions are required.",
+    "CodeOnly": (
+        "```python\n"
+        "# Currency conversion calculation\n"
+        "original_amount = 1250.0\n"
+        "fee_percentage = 0.01\n"
+        "exchange_rate = 83.58\n\n"
+        "fee_amount = original_amount * fee_percentage\n"
+        "amount_after_fee = original_amount - fee_amount\n"
+        "final_amount = amount_after_fee * exchange_rate\n\n"
+        "print(f'Fee amount: {fee_amount}')\n"
+        "print(f'Amount after fee: {amount_after_fee}')\n"
+        "print(f'Final converted amount: {final_amount}')\n"
+        "```"
+    ),
+}
+
+
+@pytest.mark.parametrize("variant, expected", ADITYA_CALCULATOR_RESPONSES.items())
+def test_calculator_response_is_verbatim_from_aditya(variant, expected):
+    actual = (ROOT / "data" / "calculator_responses" / f"{variant}.txt").read_bytes()
+    assert actual == expected.encode("utf-8"), f"data/calculator_responses/{variant}.txt differs from Aditya's"

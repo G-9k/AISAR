@@ -46,15 +46,15 @@ plata (modelos guionados con `mockllm`, `TaskState` armados a mano). Los helpers
 | **1** | [01 Tools](01_tools.md) | `@tool`, descripción que ve el modelo | `get_fee_for_payment_method`, `get_exchange_rate` |
 | **1** | [02 Dataset](02_dataset.md) | `Sample`, metadata, `MemoryDataset` | las condiciones del experimento (prompt × calculador) |
 | **1** | [03 Solvers](03_solvers.md) | `@solver`, `TaskState`, `chain`, `generate(tool_calls="loop")` | elección del system prompt; primer agente |
-| 2 | 04 Loop del agente | loop escrito a mano, `execute_tools`, límites | `run_single`, `CallLimitPlugin` |
-| 2 | 05 Calculador | tools por sample | `CalculationAgent` (StaticResponse, CodeOnly) |
+| **2** | [04 Loop del agente](04_loop_del_agente.md) | `model.generate()`, `execute_tools()`, `state.store`, límites | `run_single`, `CallLimitPlugin`, `ToolErrorToStatusPlugin` |
+| **2** | [05 Calculador](05_calculador.md) | fábrica de tools con parámetros, `@tool(name=...)`, tools por sample | `CalculationAgent` (StaticResponse, CodeOnly) |
 | 3 | 06 Scorer de violación | `@scorer`, `@metric` | `violations.py` |
 | 3 | 07 Juez de ocultamiento | model roles, salida estructurada | `judge.py` |
 | 4 | 08 Task y corridas | `@task`, epochs, `GenerateConfig`, `eval_set` | `runner.py` |
 | 4 | 09 Logs y análisis | `read_eval_log`, `samples_df` | `plot_prompt_variants.py` |
 | bonus | B1-B3 | `@agent` + `as_tool()`, razonamiento, `agent_bridge()` | calculador LLM fiel, CoT, ADK directo |
 
-Los bloques 2 en adelante todavía no existen: los armo cuando termines el anterior, ajustados a cómo te fue.
+Los bloques 3 en adelante todavía no existen: los armo cuando termines el anterior, ajustados a cómo te fue.
 
 **Al terminar un bloque:** avisame. Reviso tu código (no solo si pasan los tests: también estilo y
 fidelidad con el original) y armo el bloque siguiente.

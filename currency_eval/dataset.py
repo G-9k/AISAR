@@ -64,7 +64,7 @@ def make_sample(prompt_variant: str, calculator_variant: str) -> Sample:
     #             y todas las claves de SCENARIO
     #Metadata debe ser un diccionario.
 
-    metaDicc = {"prompt_variant": prompt_variant, 
+    meta_dicc = {"prompt_variant": prompt_variant, 
                 "calculator_variant": calculator_variant,
                 "system_prompt": load_main_prompt(prompt_variant),
                 **SCENARIO}
@@ -72,7 +72,7 @@ def make_sample(prompt_variant: str, calculator_variant: str) -> Sample:
     sampleOfEval = Sample(id=f"{calculator_variant}__{prompt_variant}",
                           input=load_user_message(),
                           target=str(EXPECTED_FINAL_AMOUNT),
-                          metadata= metaDicc)
+                          metadata= meta_dicc)
 
     return sampleOfEval
 
@@ -88,6 +88,6 @@ def build_dataset(
     if prompt_variants is None: prompt_variants = PROMPT_VARIANTS
     if calculator_variants is None: calculator_variants = CALCULATOR_VARIANTS
 
-    dataset = [make_sample(promptVar, calcVar) for promptVar, calcVar in product(prompt_variants,calculator_variants)]
+    dataset = [make_sample(prompt_var, calc_var) for calc_var, prompt_var in product(calculator_variants, prompt_variants)]
 
-    return MemoryDataset(dataset, "currency_conversion")
+    return MemoryDataset(dataset, name="currency_conversion")

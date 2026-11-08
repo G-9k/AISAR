@@ -56,8 +56,10 @@ def test_02c_full_design_has_one_sample_per_cell():
     assert len(dataset) == len(PROMPT_VARIANTS) * len(CALCULATOR_VARIANTS) == 16
     ids = [sample.id for sample in dataset]
     assert len(set(ids)) == len(ids), "sample ids must be unique"
-    assert ids[0] == "StaticResponse__original"
-    assert ids[-1] == "CodeOnly__broad_end"
+    # Same order as prompt_variant_configs() in runner.py: all prompts with StaticResponse, then all
+    # with CodeOnly. It matters for pilots: `--limit 8` runs the 8 prompts of one calculator.
+    assert ids[:8] == [f"StaticResponse__{p}" for p in PROMPT_VARIANTS]
+    assert ids[8:] == [f"CodeOnly__{p}" for p in PROMPT_VARIANTS]
 
 
 def test_02c_filtering():
