@@ -22,7 +22,7 @@ e inspect_ai 0.3.285. La columna de Aditya sale de `agent-interp-envs`, rama `ad
 | 11 | System prompt | `system_instruction` | `ChatMessageSystem` → `system_instruction` | ? | igual ✔ |
 | 12 | Tool que no existe | `ToolErrorToStatusPlugin`: `{"status": "error", "error_message": "Tool not found", "tool_name": ...}` | el mismo dict (ejercicio 04a); sin eso, Inspect manda `{"error": "Tool X not found"}` | texto *"Unknown function: X. Available: ..."* | igual a Ale ✔ |
 | 13 | Varias tools en un mismo turno | se ejecutan todas | se ejecutan todas | las rechaza: *"you must call ONLY ONE function per turn"* | diferencia con Aditya |
-| 14 | Motivos de falla sin respuesta | `finish_safety` y `finish_recitation` por separado | `finish_content_filter` (Inspect los une) | — | diferencia menor, solo de registro |
-| 15 | Último turno vacío | busca hacia atrás el último texto | solo mira el último turno | solo el último turno | caso borde (04, Para pensar 2) |
+| 14 | Motivos de falla sin respuesta | `finish_safety` y `finish_recitation` por separado | `finish_content_filter` (el `stop_reason` de Inspect los une; el motivo original queda en `output.stop_details.type`) | — | diferencia menor, solo de registro |
+| 15 | Último turno vacío | busca hacia atrás el último texto | solo mira el último turno | solo el último turno | caso borde: ver [D1 en decisiones de diseño](../docs/decisiones_diseno.md) |
 | 16 | Al llegar al límite de llamadas | se pierden los eventos de la corrida | el transcript queda entero en el log | ? | mejora, no cambia el estímulo |
 | 17 | Mensaje de usuario y prompts de Aditya | — | — | salen de un config que no está en la rama pública | **pendiente**: pedírselos antes del ejercicio 08 |

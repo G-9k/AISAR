@@ -26,6 +26,7 @@ separarlas en dos ramas que nunca se vuelven a unir:
 | `currency_eval/ex00_hello.py` + su test | sí | no | es solo un calentamiento |
 | `ejercicios/NN_*.md`, `ejercicios/README.md` | sí | no | el README pasa a ser el README del tutorial |
 | `ejercicios/diferencias_scaffold.md` | sí | **sí**, en `docs/` | es documentación de la investigación, no del curso |
+| `docs/decisiones_diseno.md` | no | sí | las decisiones tomadas; en el tutorial quedan como preguntas abiertas |
 | `soluciones/` | sí | no | |
 | `conftest.py` (opción `--soluciones`) | sí | no | en `main` no hay soluciones aparte |
 | `tests/test_exNN_*.py` | sí | sí, renombrados (`test_tools.py`, `test_agent.py`, ...) | sacar las referencias a guías y ejercicios |

@@ -17,8 +17,9 @@ from currency_eval.solvers import currency_system_prompt
 from currency_eval.tools import get_exchange_rate, get_fee_for_payment_method
 
 # Inspect's stop_reason -> Ale's run_failure_reason, for runs that end without a visible answer.
-# Inspect merges Gemini's SAFETY and RECITATION into "content_filter", so Ale's
-# "finish_safety" and "finish_recitation" become a single reason here.
+# Inspect's stop_reason merges Gemini's SAFETY and RECITATION into "content_filter", so Ale's
+# "finish_safety" and "finish_recitation" become a single reason here. The original Gemini
+# reason is still in the log, in state.output.stop_details.type.
 STOP_REASON_TO_FAILURE = {
     "max_tokens": "finish_max_tokens",
     "content_filter": "finish_content_filter",
@@ -34,7 +35,20 @@ def tool_error_as_status(message: ChatMessageTool) -> ChatMessageTool:
     #       claves en el mismo orden: status, error_message, tool_name.
     #       tool_name es el nombre de la tool que pidió el modelo (message.function).
     #       Conservá tool_call_id y function: el resultado tiene que seguir respondiendo al mismo pedido.
-    raise NotImplementedError("Ejercicio 04a: falta completar tool_error_as_status()")
+
+    if message.error is None: return message
+    else:
+        tool_name = message.function
+        tool_id = message.tool_call_id
+        dicc_error = {"status":"error",
+                      "error_message": "Tool not found",
+                      "tool_name": tool_name}
+        error = json.dumps(dicc_error)
+        new_message = ChatMessageTool(tool_call_id=tool_id,
+                                      function=tool_name,
+                                      content=error)
+        return new_message
+
 
 
 # Exercise 04b
@@ -45,7 +59,19 @@ def derive_run_outcome(state: TaskState, call_limit_reached: bool) -> tuple[str,
     #   3. si state.output.stop_reason está en STOP_REASON_TO_FAILURE: ("failed", <ese motivo>)
     #   4. si no: ("failed", "stop_tool_only") si el modelo pidió alguna tool en la conversación,
     #             ("failed", "stop_no_tool_no_text") si nunca pidió ninguna.
-    raise NotImplementedError("Ejercicio 04b: falta completar derive_run_outcome()")
+    if call_limit_reached: 
+        return "failed", "call_limit_reached"
+    if state.output.completion: 
+        return "ok", None
+    if state.output.stop_reason in STOP_REASON_TO_FAILURE:
+        return "failed", STOP_REASON_TO_FAILURE[state.output.stop_reason]
+
+    gen_tool_calls = (message.tool_calls for message in state.messages if isinstance(message, ChatMessageAssistant))
+
+    if any(gen_tool_calls):
+        return "failed", "stop_tool_only"
+    else:
+        return "failed", "stop_no_tool_no_text"
 
 
 # Exercise 04c
@@ -60,7 +86,37 @@ def agent_loop(max_calls: int = 30) -> Solver:
         #   - nunca más de max_calls llamadas al modelo (CallLimitPlugin).
         #   Al final, guardá en state.store: "run_status" y "run_failure_reason" (de derive_run_outcome)
         #   y "total_calls" (cuántas veces llamaste al modelo). Devolvé state.
-        raise NotImplementedError("Ejercicio 04c: falta completar agent_loop()")
+        total_calls = 0
+        limit_reached = False
+        while True:
+            if total_calls >= max_calls:
+                limit_reached = True
+                break
+            # esto es >= porque no debería poder agregar si ya estoy en el limite
+
+            model_output = await get_model().generate(input=state.messages,
+                                                tools=state.tools)
+            total_calls += 1
+            state.output = model_output
+            model_answer = model_output.choices[0].message
+            state.messages.append(model_answer)
+
+            if not model_answer.tool_calls: 
+                if total_calls > max_calls: limit_reached = True
+                break
+            
+            else:
+                tool_answers = await execute_tools(messages=state.messages,
+                                                  tools=state.tools)
+                for m in tool_answers.messages:
+                    tool_answer = tool_error_as_status(m)
+                    state.messages.append(tool_answer)
+
+        run_status, failure_reason = derive_run_outcome(state,limit_reached)
+        state.store.set("run_status", run_status)
+        state.store.set("run_failure_reason", failure_reason)
+        state.store.set("total_calls", total_calls)                  
+        return state
 
     return solve
 
@@ -69,7 +125,11 @@ def agent_loop(max_calls: int = 30) -> Solver:
 @solver
 def currency_agent_v1() -> Solver:
     # TODO: igual que currency_agent_v0 (solvers.py), pero con agent_loop() en lugar de generate().
-    raise NotImplementedError("Ejercicio 04d: falta completar currency_agent_v1()")
+    currency_agent = chain([currency_system_prompt(),
+                            use_tools(get_fee_for_payment_method(), get_exchange_rate()),
+                            agent_loop()])
+
+    return currency_agent
 
 
 # Exercise 05c

@@ -161,6 +161,14 @@ def test_04c_call_limit(tmp_path):
     assert sample.store["total_calls"] == 3
 
 
+def test_04c_an_answer_on_the_last_allowed_call_is_ok(tmp_path):
+    # The limit forbids a call number max_calls + 1. A final answer on call number max_calls is a
+    # normal, successful run: CallLimitPlugin only raises when a call goes over the limit.
+    sample = run_loop(tmp_path, happy_path(), max_calls=3)
+    assert sample.store["run_status"] == "ok"
+    assert sample.store["total_calls"] == 3
+
+
 def test_04c_tool_calls_without_a_final_answer(tmp_path):
     sample = run_loop(tmp_path, [tool_call("get_fee_for_payment_method", method="Bank Transfer"), text("")])
     assert (sample.store["run_status"], sample.store["run_failure_reason"]) == ("failed", "stop_tool_only")

@@ -17,8 +17,9 @@ from currency_eval.solvers import currency_system_prompt
 from currency_eval.tools import get_exchange_rate, get_fee_for_payment_method
 
 # Inspect's stop_reason -> Ale's run_failure_reason, for runs that end without a visible answer.
-# Inspect merges Gemini's SAFETY and RECITATION into "content_filter", so Ale's
-# "finish_safety" and "finish_recitation" become a single reason here.
+# Inspect's stop_reason merges Gemini's SAFETY and RECITATION into "content_filter", so Ale's
+# "finish_safety" and "finish_recitation" become a single reason here. The original Gemini
+# reason is still in the log, in state.output.stop_details.type.
 STOP_REASON_TO_FAILURE = {
     "max_tokens": "finish_max_tokens",
     "content_filter": "finish_content_filter",
