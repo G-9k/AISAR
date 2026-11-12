@@ -51,7 +51,7 @@ def load_main_prompt(variant: str) -> str:
     if addr.exists():
         return read_text(addr)
     else:
-        raise ValueError(f"Prompt {variant} does not exist.")
+        raise ValueError(f"Prompt {variant!r} does not exist.")
 
 
 # Exercise 02b

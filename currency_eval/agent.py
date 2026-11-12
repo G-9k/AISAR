@@ -138,4 +138,9 @@ def currency_agent() -> Solver:
     # TODO: el agente completo: system prompt, las dos tools del ejercicio 01, el calculador
     #       del sample (add_calculator) y el loop. El orden importa: es el orden en que el
     #       modelo ve las tools.
-    raise NotImplementedError("Ejercicio 05c: falta completar currency_agent()")
+    currency_agent = chain([currency_system_prompt(),
+                            use_tools(get_fee_for_payment_method(), get_exchange_rate()),
+                            add_calculator(),
+                            agent_loop()])
+
+    return currency_agent

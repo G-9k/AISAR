@@ -8,9 +8,10 @@
 ## Objetivos
 
 - Escribir una tool cuya fábrica **recibe configuración**: la variante de falla.
-- Darle a una tool un nombre distinto del de la función de Python (`@tool(name=...)`).
+- Fijar explícitamente el nombre que ve el modelo (`@tool(name=...)`).
 - Elegir las tools **por sample**, leyendo la metadata, con un solver propio.
-- Tomar (y anotar) dos decisiones de fidelidad: el nombre y la descripción del calculador.
+- Tomar (y anotar) una decisión de fidelidad: la descripción del calculador. La otra, el nombre, ya está
+  tomada (decisión D2).
 
 ## Conceptos
 
@@ -36,13 +37,17 @@ pedido que le escribe al calculador. Para el modelo, las dos variantes son la mi
 tool**, no cuando el modelo la llame. Un error de tipeo en el nombre de la variante tiene que explotar
 cuando armás el agente, no en el medio de una corrida paga.
 
-**`@tool(name="CalculationAgent")`.** Por defecto, el nombre que ve el modelo es el de la fábrica. Pero
-ADK le manda a Gemini el nombre `CalculationAgent` (está en `tests/fixtures/adk_tool_declarations.json`),
-y en Python las funciones se escriben en minúsculas con guiones bajos. `@tool(name=...)` separa las dos
-cosas: la función se llama `calculation_agent` y el modelo ve `CalculationAgent`. Fijate que `@tool` sin
-paréntesis y `@tool(name=...)` con paréntesis son dos formas válidas: la segunda primero llama a `tool` con
-la configuración y usa lo que devuelve como decorador. Otra vez, la diferencia entre la fábrica y lo que
-fabrica.
+**El nombre de la tool: `@tool(name="calculation_agent")`.** Por defecto, el nombre que ve el modelo es el
+de la fábrica. Acá coinciden, pero el stub lo fija explícitamente porque **el nombre es parte del estímulo**:
+si mañana alguien renombra la función de Python, el modelo no tiene que enterarse. Además es una
+diferencia deliberada con Ale. ADK le manda a Gemini `CalculationAgent` (el nombre del sub-agente; está
+en `tests/fixtures/adk_tool_declarations.json`), mientras el prompt dice *"use the calculation_agent tool"*.
+Usamos el nombre del prompt, igual que Aditya: el porqué está en la decisión D2 de
+[`docs/decisiones_diseno.md`](../docs/decisiones_diseno.md).
+
+Fijate que `@tool` sin paréntesis y `@tool(name=...)` con paréntesis son dos formas válidas: la segunda
+primero llama a `tool` con la configuración y usa lo que devuelve como decorador. Otra vez, la diferencia
+entre la fábrica y lo que fabrica.
 
 **Tools por sample.** `use_tools(...)` fija las tools para **todos** los samples de la task. Pero el
 calculador depende de la metadata de cada sample. Por eso va en un solver propio que lee
@@ -72,7 +77,7 @@ verifica leyendo el log: en `sample.events`, cada llamada al modelo queda regist
 <details><summary>Pista 05a: la estructura</summary>
 
 ```python
-@tool(name="CalculationAgent")
+@tool(name="calculation_agent")
 def calculation_agent(variant: str) -> Tool:
     ...                          # en la fábrica: buscar el archivo, validar, preparar la respuesta
 
@@ -86,12 +91,11 @@ def calculation_agent(variant: str) -> Tool:
 
 ## Para pensar
 
-1. **El nombre.** ADK le manda a Gemini `CalculationAgent`, pero el prompt dice *"use the
-   calculation_agent tool"*, y Aditya llamó a su tool `calculation_agent`. El test fija el nombre de Ale.
-   Ahora, ¿qué pasa si el modelo obedece al prompt y llama a `calculation_agent`? (Ejercicio 04: recibe
-   `{"status": "error", "error_message": "Tool not found", ...}`, y el prompt dice que ante un error hay que
-   frenar.) Mirá el mensaje fijo de `ToolErrorToStatusPlugin`: dice *"Tool not found"* para cualquier error.
-   ¿Qué te sugiere sobre por qué Ale lo agregó? Para comparar con Aditya, ¿qué nombre conviene?
+1. **El nombre (ya decidido, D2).** Con el nombre de Ale, un modelo que obedece al prompt pide
+   `calculation_agent`, una tool que no existe, y recibe `{"status": "error", "error_message": "Tool not
+   found", ...}` (ejercicio 04). Por eso elegimos el nombre del prompt. Si algún día querés medir cuánto
+   importaba esa diferencia, `tool_with(calculation_agent(variante), name="CalculationAgent")` recupera el
+   nombre de Ale sin tocar la tool.
 2. **La descripción.** ADK manda una descripción **vacía** (el sub-agente de Ale no tiene `description`).
    Inspect no acepta tools sin descripción: lo probé y lanza `ValueError`. Aditya usa una descripción larga
    que **promete un resultado**: *"...it will return the computed result"*. Una descripción mínima cambia

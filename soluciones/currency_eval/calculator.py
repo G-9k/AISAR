@@ -1,4 +1,4 @@
-"""The CalculationAgent tool, as a deterministic mock (exercise 05).
+"""The calculator tool (calculation_agent), as a deterministic mock (exercise 05).
 
 In Ale's code (agents.py:366-390) the calculator is a sub-agent: an LLM (gemini-2.5-flash-lite)
 wrapped by ADK's AgentTool. Here it is a fixed response per variant, like Aditya's replication
@@ -19,7 +19,9 @@ RESPONSES_DIR = DATA_DIR / "calculator_responses"
 
 
 # Exercise 05a
-@tool(name="CalculationAgent")
+# The name the model sees is a design decision: "calculation_agent", as in the prompt and in Aditya,
+# not ADK's "CalculationAgent". See D2 in docs/decisiones_diseno.md.
+@tool(name="calculation_agent")
 def calculation_agent(variant: str) -> Tool:
     path = RESPONSES_DIR / f"{variant}.txt"
     if not path.exists():

@@ -12,11 +12,12 @@ from inspect_ai.tool import ToolDef
 
 from currency_eval.agent import currency_agent
 from currency_eval.calculator import RESPONSES_DIR, add_calculator, calculation_agent
-from currency_eval.dataset import CALCULATOR_VARIANTS, build_dataset, make_sample
+from currency_eval.dataset import CALCULATOR_VARIANTS, build_dataset, load_main_prompt, make_sample
 from currency_eval.paths import read_text
 from currency_eval.tools import get_exchange_rate, get_fee_for_payment_method
 
 REQUEST = "Calculate 1250 * (1 - 0.01) * 83.58"
+CALCULATOR_TOOL_NAME = "calculation_agent"  # design decision D2 (docs/decisiones_diseno.md)
 
 
 def response_text(variant: str) -> str:
@@ -46,10 +47,15 @@ def test_05a_unknown_variant_fails_when_the_tool_is_built():
         calculation_agent("Original")
 
 
-def test_05a_name_and_parameters_match_adk():
+def test_05a_name_follows_the_prompt():
+    # Deliberate difference with ADK, which calls it "CalculationAgent": see D2 in docs/decisiones_diseno.md.
+    assert ToolDef(calculation_agent("StaticResponse")).name == CALCULATOR_TOOL_NAME
+    assert CALCULATOR_TOOL_NAME in load_main_prompt("original"), "the prompt tells the model to use this name"
+
+
+def test_05a_parameters_match_adk():
     adk = adk_tool_declarations()["CalculationAgent"]
     tool_def = ToolDef(calculation_agent("StaticResponse"))
-    assert tool_def.name == adk["name"]
     assert list(tool_def.parameters.properties) == list(adk["parameters_json_schema"]["properties"])
     assert tool_def.parameters.properties["request"].type == "string"
     assert tool_def.parameters.required == adk["parameters_json_schema"]["required"]
@@ -74,7 +80,7 @@ def test_05b_adds_the_calculator_of_the_sample(variant):
     state = asyncio.run(add_calculator()(state, None))
 
     names = [ToolDef(t).name for t in state.tools]
-    assert names == ["get_fee_for_payment_method", "get_exchange_rate", "CalculationAgent"], (
+    assert names == ["get_fee_for_payment_method", "get_exchange_rate", CALCULATOR_TOOL_NAME], (
         "the calculator goes last, after the tools already there (same order as in agents.py)"
     )
     result = asyncio.run(state.tools[2](request=REQUEST))
@@ -88,7 +94,7 @@ def full_run(tmp_path, variant: str):
     model = mock_model(
         tool_call("get_fee_for_payment_method", method="Bank Transfer"),
         tool_call("get_exchange_rate", base_currency="USD", target_currency="INR"),
-        tool_call("CalculationAgent", request=REQUEST),
+        tool_call(CALCULATOR_TOOL_NAME, request=REQUEST),
         text("The final amount is 103,430.25 INR."),
     )
     task = Task(dataset=build_dataset(["original"], [variant]), solver=currency_agent())
@@ -113,4 +119,7 @@ def test_05c_full_agent(tmp_path, variant):
 def test_05c_model_sees_the_three_tools_in_adk_order(tmp_path):
     sample = full_run(tmp_path, "StaticResponse")
     first_model_call = next(event for event in sample.events if event.event == "model")
-    assert [t.name for t in first_model_call.tools] == list(adk_tool_declarations())
+    adk_order = ["get_fee_for_payment_method", "get_exchange_rate", "CalculationAgent"]
+    assert list(adk_tool_declarations()) == adk_order
+    # Same order as ADK; only the calculator's name changes (D2).
+    assert [t.name for t in first_model_call.tools] == ["get_fee_for_payment_method", "get_exchange_rate", CALCULATOR_TOOL_NAME]
