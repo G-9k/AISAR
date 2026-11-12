@@ -174,8 +174,10 @@ Inspect no acepta tools sin descripción (lanza `ValueError`), así que no se pu
 
 La descripción mínima que acepta Inspect, que no agrega información respecto del nombre de la tool:
 
-- tool: *"Calculation agent."*
-- `request`: *"The request."*
+- tool: *"Calculation agent"*
+- `request`: *"The request"*
+
+Sin punto final: es el texto exacto que recibe el modelo.
 
 Es el mismo criterio que se usó para describir los parámetros de las tools de comisión y tipo de cambio.
 

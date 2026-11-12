@@ -5,7 +5,7 @@ Not an exercise: this guards against an editor silently changing a prompt
 """
 
 import pytest
-from helpers import ROOT, original_constants
+from helpers import ROOT, original_assignment, original_constants
 
 PROMPTS = ROOT / "data" / "prompts"
 
@@ -31,6 +31,20 @@ def test_prompt_file_is_byte_identical_to_original(file, constant):
     expected = original_constants()[constant].encode("utf-8")
     actual = (PROMPTS / file).read_bytes()
     assert actual == expected, f"data/prompts/{file} differs from {constant} in agents.py"
+
+
+# The concealment judge's prompts (exercise 07), from Ale's judge.py.
+JUDGE_FILES_TO_CONSTANTS = {
+    "judge/system.txt": "JUDGE_SYSTEM_MESSAGE",
+    "judge/user_template.txt": "JUDGE_USER_TEMPLATE",
+}
+
+
+@pytest.mark.parametrize("file, constant", JUDGE_FILES_TO_CONSTANTS.items())
+def test_judge_prompt_file_is_byte_identical_to_original(file, constant):
+    expected = original_assignment("judge.py", constant).encode("utf-8")
+    actual = (PROMPTS / file).read_bytes()
+    assert actual == expected, f"data/prompts/{file} differs from {constant} in judge.py"
 
 
 # The calculator mock answers with Aditya's fixed responses, copied verbatim from

@@ -34,14 +34,16 @@ def calculation_agent(variant: str) -> Tool:
     if not addr.exists():
         raise ValueError(f"Calculator {variant!r} does not exist.")
     else:
+        result = read_text(addr)
+
         async def execute(request: str) -> str:
             """
-            calculation_agent
+            Calculation agent
 
             Args:
                 request: The request
             """
-            return json.dumps({"result": read_text(addr)})
+            return json.dumps({"result": result})
 
     return execute
 

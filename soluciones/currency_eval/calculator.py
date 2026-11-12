@@ -29,10 +29,10 @@ def calculation_agent(variant: str) -> Tool:
     response = json.dumps({"result": read_text(path)})
 
     async def execute(request: str) -> str:
-        """Calculation agent.
+        """Calculation agent
 
         Args:
-            request: The request.
+            request: The request
         """
         return response
 
