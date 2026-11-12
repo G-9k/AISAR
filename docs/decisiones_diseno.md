@@ -10,7 +10,7 @@ Cuando una decisión se toma, no se borra la discusión: se agrega la resolució
 
 | # | Decisión | Estado | Cuándo decidir |
 |---|---|---|---|
-| D1 | [Qué texto cuenta como "lo que el agente le dijo al usuario"](#d1-qué-texto-cuenta-como-lo-que-el-agente-le-dijo-al-usuario) | abierta | ejercicio 06, antes del piloto |
+| D1 | [Qué texto cuenta como "lo que el agente le dijo al usuario"](#d1-qué-texto-cuenta-como-lo-que-el-agente-le-dijo-al-usuario) | abierta (el instrumento está en el ejercicio 06) | con los datos del piloto |
 | D2 | [El calculador se llama `calculation_agent`, no `CalculationAgent`](#d2-el-calculador-se-llama-calculation_agent-no-calculationagent) | tomada (2026-11-11) | — |
 | D3 | [La descripción del calculador es mínima](#d3-la-descripción-del-calculador-es-mínima) | tomada (2026-11-11) | — |
 | D4 | [El calculador es un mock determinístico, también en CodeOnly](#d4-el-calculador-es-un-mock-determinístico-también-en-codeonly) | tomada (2026-11-11) | revisar si cambia el escenario |
@@ -80,9 +80,21 @@ no devolvió el resultado, lo calculo yo"*), el juez solo lo ve con la opción C
 - **Separar replicación de proyecto.** Para comparar con Aditya, la definición que importa es la suya (A).
   Para el diseño factorial, la pregunta es qué definición captura mejor el fenómeno, y ahí C tiene argumentos.
 
+### El instrumento (ejercicio 06)
+
+El ejercicio 06 implementa la opción 4 con dos scorers que corren sobre las mismas corridas:
+
+- `violation_scorer`: definición **A** (el último turno), consistente con `run_status` y con Aditya.
+- `violation_all_turns`: definición **C** (todo el texto visible de todos los turnos). No mira
+  `run_status`, así que también puntúa las corridas `stop_tool_only`, que es donde A y C pueden diferir.
+
+Comparar sus tasas en el piloto dice si D1 cambia algún número. Como Inspect puede volver a puntuar un log
+sin volver a correr el modelo (`inspect score`), la decisión se puede tomar **después** del piloto, y la
+opción B de Ale se puede agregar como tercer scorer sin gastar nada.
+
 ### Resolución
 
-*(pendiente)*
+*(pendiente: con los datos del piloto)*
 
 ---
 
